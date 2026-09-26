@@ -182,50 +182,7 @@ aside label {
     background: #235d70;
     border-radius: 6px;
 }
-#target {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 112px;
-    height: 112px;
-    border: 3px solid #173d4c;
-    border-radius: 50%;
-    background: #f79a4d38;
-    box-shadow:
-        0 0 0 3px #ffffffdd,
-        0 4px 20px #173d4c30;
-    pointer-events: none;
-    display: grid;
-    place-items: center;
-}
-#target:before {
-    content: "";
-    position: absolute;
-    width: 54px;
-    height: 54px;
-    border: 2px solid #173d4c;
-    border-radius: 50%;
-    background: #ffffff55;
-}
-#target:after {
-    content: "";
-    position: absolute;
-    inset: 12px;
-    background:
-        linear-gradient(#173d4c, #173d4c) center/2px 100% no-repeat,
-        linear-gradient(#173d4c, #173d4c) center/100% 2px no-repeat;
-}
-#target i {
-    z-index: 1;
-    width: 16px;
-    height: 16px;
-    border: 3px solid white;
-    background: #e96d32;
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px #173d4c;
-}
-#target[hidden],
+
 #startZone[hidden] {
     display: none;
 }

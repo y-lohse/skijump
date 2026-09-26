@@ -15,7 +15,9 @@ The development server listens on the local network; stop it with Ctrl+C when do
 ## Play
 
 - Hold the bottom zone to start the run. Watch the position dot approach the orange edge.
-- Swipe quickly to the center target and pause, keeping your finger down. The pause commits takeoff.
+- Takeoff happens automatically at the edge. Swipe upward through the edge without stopping or releasing. Only movement in the final second counts (or since your swipe began, if later).
+- Power = distance × vertical straightness × speed. Distance credit caps at ¾ of screen height; longer swipes remain valid. Sideways motion and reversals reduce precision. Duration includes pauses through takeoff, with full speed credit at 0.2 seconds or faster. No recent upward swipe means no jump power.
+- Your held finger immediately becomes the flight input; ski opening smoothly follows its height. There is no center target or pause-to-jump gesture.
 - Up opens the skis for lift. Left/right steers yaw; center stops steering, not existing yaw. Counter the wind smoothly.
 - Before landing, move down to close the skis and correct yaw. Lift, then tap at ground contact (±150 ms). Only the first tap counts.
 - Landing above 9° yaw or 5.6° total V opening causes a fall. Missing the tap alone does not.

@@ -19,11 +19,8 @@ const pointer = {
   x: 0,
   y: 0,
   lastT: 0,
-  motionT: 0,
-  startY: 0,
   swipeStart: null,
-  peakSpeed: 0,
-  distance: 0,
+  samples: [],
   vx: 0,
   vy: 0,
 };
@@ -41,6 +38,8 @@ resize();
 function reset() {
   pointer.down = false;
   pointer.id = null;
+  pointer.samples = [];
+  pointer.swipeStart = null;
   const angle = Math.random() * Math.PI * 2;
   state = {
     phase: "ready",
@@ -144,11 +143,8 @@ $("game").addEventListener("pointerdown", (e) => {
     id: e.pointerId,
     ...pos,
     lastT: state.t,
-    motionT: state.t,
-    startY: pos.y,
     swipeStart: null,
-    peakSpeed: 0,
-    distance: 0,
+    samples: [{ t: state.t, x: pos.x / H, y: pos.y / H }],
     vx: 0,
     vy: 0,
   });
@@ -173,12 +169,8 @@ $("game").addEventListener("pointermove", (e) => {
     dy = (pos.y - pointer.y) / H;
   const vx = dx / dt,
     vy = dy / dt;
-  if (Math.hypot(dx, dy) > 0.002) pointer.motionT = state.t;
-  if (state.phase === "run") {
-    if (pointer.swipeStart === null && pointer.startY - pos.y > H * 0.025)
-      pointer.swipeStart = state.t;
-    pointer.peakSpeed = Math.max(pointer.peakSpeed, -vy);
-    pointer.distance += Math.hypot(dx, dy);
+  if (state.phase === "run" && pointer.swipeStart === null && dy < -0.002) {
+    pointer.swipeStart = pointer.samples.at(-1)?.t ?? state.t;
   }
   if (state.phase === "flight" && !state.released) {
     // Acceleration and reversals, rather than position noise, destabilize the jumper.
@@ -190,6 +182,7 @@ $("game").addEventListener("pointermove", (e) => {
     }
   }
   Object.assign(pointer, { ...pos, lastT: state.t, vx, vy });
+  if (state.phase === "run") recordSwipeSample();
   if (state.phase === "flight" && !state.released) setFlightInput();
 });
 function release(e) {
@@ -212,44 +205,65 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) release();
   lastFrame = 0;
 });
-function takeoff(auto = false) {
-  const timing =
-    state.edgeTime === null ? -timeToEdge() : state.t - state.edgeTime;
-  const penalty =
-    timing < 0
-      ? Math.pow(clamp(-timing / 2, 0, 1), 3)
-      : (Math.exp(4 * clamp(timing / 0.5, 0, 1)) - 1) / (Math.exp(4) - 1);
-  const error = Math.hypot((pointer.x - W / 2) / W, (pointer.y - H / 2) / H);
-  const precision = clamp(1 - error / 0.24, 0, 1);
-  const swipeDuration = Math.max(
-    0.06,
-    pointer.motionT - (pointer.swipeStart ?? pointer.motionT),
-  );
-  const meanSpeed =
-    Math.max(0, (pointer.startY - pointer.y) / H) / swipeDuration;
-  const speedScore = clamp(meanSpeed / 2.8, 0, 1);
-  const power = auto ? 0 : speedScore * precision * (1 - penalty);
-  state.launch = {
-    timing,
-    penalty: auto ? 1 : penalty,
-    precision: auto ? 0 : precision,
-    speedScore: auto ? 0 : speedScore,
-    power,
-    auto,
+function recordSwipeSample() {
+  if (!pointer.down) return;
+  pointer.samples.push({ t: state.t, x: pointer.x / H, y: pointer.y / H });
+  // Keep one sample before the window so crossing segments can be clipped.
+  while (pointer.samples.length > 2 && pointer.samples[1].t < state.t - 1) {
+    pointer.samples.shift();
+  }
+}
+function measureSwipe() {
+  const end = state.edgeTime;
+  const start = Math.max(end - 1, pointer.swipeStart ?? end);
+  const duration = clamp(end - start, 1 / 120, 1);
+  let upward = 0,
+    path = 0;
+  if (pointer.down && pointer.swipeStart !== null) {
+    for (let i = 1; i < pointer.samples.length; i++) {
+      const a = pointer.samples[i - 1],
+        b = pointer.samples[i];
+      if (b.t < start || a.t > end) continue;
+      const span = b.t - a.t;
+      const fraction =
+        span > 0
+          ? clamp((Math.min(b.t, end) - Math.max(a.t, start)) / span, 0, 1)
+          : 1;
+      const dx = (b.x - a.x) * fraction,
+        dy = (a.y - b.y) * fraction;
+      upward += dy;
+      path += Math.hypot(dx, dy);
+    }
+  }
+  const distance = Math.max(0, upward);
+  const distanceScore = clamp(distance / 0.75, 0, 1);
+  // Net vertical progress versus the entire path penalizes diagonals and reversals.
+  const precision = path > 0 ? clamp(distance / path, 0, 1) ** 2 : 0;
+  // 200 ms earns full speed credit; pauses before the lip remain in the duration.
+  const speedScore = distance > 0 ? clamp(0.2 / duration, 0, 1) : 0;
+  return {
+    distance,
+    distanceScore,
+    precision,
+    duration,
+    speedScore,
+    power: distanceScore * precision * speedScore,
   };
+}
+function takeoff() {
+  state.launch = measureSwipe();
   state.phase = "flight";
-  // Past the lip, add the impulse to the existing falling velocity rather than teleporting.
   state.vy =
-    (state.edgeTime === null ? -state.speed * 0.12 : state.vy) + 2 + power * 9;
-  state.v = 0.42;
-  state.inputV = state.v;
+    -state.speed * 0.12 +
+    (state.launch.power > 0 ? 2 : 0) +
+    state.launch.power * 9;
+  // Keep the current ski opening; the flight smoother follows the held finger.
   if (pointer.down) setFlightInput();
   else {
     state.released = true;
+    state.inputV = state.v;
     state.steer = 0;
   }
-
-  if (auto) state.vy -= 2;
 }
 function timeToEdge() {
   return (
@@ -310,7 +324,7 @@ function score() {
     ${row(`Distance · ${distance.toFixed(1)} m`, distancePoints.toFixed(1))}<p class="detail">60 + (${distance.toFixed(1)} − 120) × 1.8 pts/m</p>
     ${row("Landing / style · out of 60", style.toFixed(1))}<p class="detail">${state.fall ? `FALL: ${reason}. Style = 12 + up to 6 for stability.` : `Base 30 + tap ${(12 * tapQuality).toFixed(1)}/12 + alignment ${(9 * yawQuality).toFixed(1)}/9 + parallel skis ${(9 * vQuality).toFixed(1)}/9.`}<br>Yaw ${Math.abs(td.yaw / rad).toFixed(1)}° · V ${(td.v * 40).toFixed(1)}° · ${offset === null ? "no landing tap" : `tap ${Math.abs(offset * 1000).toFixed(0)} ms ${offset < 0 ? "early" : "late"}`}.</p>
     ${row("Wind compensation", `${windPoints >= 0 ? "+" : ""}${windPoints.toFixed(1)}`)}<p class="detail">Mean ${Math.abs(averageWind).toFixed(2)} m/s ${averageWind >= 0 ? "headwind × −7.2" : "tailwind × +10.8"}.</p>
-    ${row("Takeoff power", `${Math.round(state.launch.power * 100)}%`)}<p class="detail">Speed ${Math.round(state.launch.speedScore * 100)}% × accuracy ${Math.round(state.launch.precision * 100)}% × timing ${Math.round((1 - state.launch.penalty) * 100)}%.${state.launch.auto ? " Automatic drop: no takeoff." : ""}</p>
+    ${row("Takeoff power", `${Math.round(state.launch.power * 100)}%`)}<p class="detail">Distance ${Math.round(state.launch.distanceScore * 100)}% × vertical precision ${Math.round(state.launch.precision * 100)}% × speed ${Math.round(state.launch.speedScore * 100)}%.<br>${Math.round(state.launch.distance * 100)}% screen height · ${state.launch.duration.toFixed(2)} s swipe window.</p>
     <button id="again">Jump again ↻</button>`;
   $("results").hidden = false;
   $("again").onclick = reset;
@@ -318,31 +332,31 @@ function score() {
 }
 function update(dt) {
   if (introOpen || state.phase === "result") return;
+  // Split the step at the lip so takeoff and its swipe window use the exact edge time.
+  if (state.phase === "run") {
+    const untilEdge = timeToEdge();
+    if (untilEdge > 1e-9 && untilEdge < dt - 1e-9) {
+      update(untilEdge);
+      update(dt - untilEdge);
+      return;
+    }
+  }
   const simDt = dt * (state.phase === "flight" ? FLIGHT_RATE : 1);
   state.t += dt;
   state.physicsT += simDt;
   // Preview wind is stable until the player starts the run.
   if (state.phase !== "ready") updateWind();
   if (state.phase === "run") {
-    const oldZ = state.z;
+    state.z += state.speed * dt + 1.5 * dt * dt;
     state.speed += 3 * dt;
-    state.z += state.speed * dt;
-    if (state.z <= 0) state.y = ground(state.z);
-    else {
-      if (state.edgeTime === null) {
-        state.edgeTime =
-          state.t - dt + dt * clamp(-oldZ / (state.z - oldZ), 0, 1);
-        state.y = 42;
-        state.vy = -state.speed * 0.25;
-      }
-      state.vy -= 9.81 * dt;
-      state.y += state.vy * dt;
+    state.y = ground(Math.min(0, state.z));
+    recordSwipeSample();
+    if (state.z >= -1e-8) {
+      state.z = 0;
+      state.y = 42;
+      state.edgeTime = state.t;
+      takeoff();
     }
-    const swiped = pointer.startY - pointer.y > H * 0.17;
-    const paused = state.t - pointer.motionT >= 0.065;
-    if (pointer.down && swiped && paused) takeoff();
-    else if (state.edgeTime !== null && state.t - state.edgeTime >= 0.5)
-      takeoff(true);
   } else if (state.phase === "flight") {
     const previous = { z: state.z, y: state.y };
     state.v = lerp(state.v, state.inputV, 1 - Math.exp(-simDt * 12));
@@ -404,7 +418,7 @@ function hud() {
   $("edgeDot").style.top = `${clamp(25 - (s.z / 92) * 70, 0, 95)}%`;
   $("edgeText").textContent =
     s.z <= 0 ? `${Math.abs(s.z).toFixed(0)} m to lip` : "OFF RAMP";
-  $("target").hidden = !(run || s.phase === "ready");
+
   $("startZone").hidden = s.phase !== "ready";
   $("edgeGauge").hidden = !(run || s.phase === "ready");
   $("heightGauge").hidden = !flying;
