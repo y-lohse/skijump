@@ -114,6 +114,14 @@ $("help").onclick = () => {
   introOpen = true;
   $("intro").hidden = false;
 };
+// iOS can recognize native long-press gestures despite cancelled pointer events.
+function preventNativeGesture(event) {
+  if (event.target.closest("button, .panel")) return;
+  if (event.cancelable) event.preventDefault();
+}
+for (const type of ["touchstart", "touchmove", "contextmenu"]) {
+  $("game").addEventListener(type, preventNativeGesture, { passive: false });
+}
 function setFlightInput() {
   state.inputV = clamp((H * 0.84 - pointer.y) / (H * 0.68), 0, 1);
   state.steer = clamp((0.5 - pointer.x / W) / 0.38, -1, 1);
