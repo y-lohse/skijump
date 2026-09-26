@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#102a38" />
+        <title>Flight line · Ski jump prototype</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <main id="game">
+            <canvas id="scene" aria-label="Ski jumping game"></canvas>
+            <header>
+                <div class="eyebrow">K120 / ALPINE TEST HILL</div>
+                <div class="title">FLIGHT LINE <span>PROTOTYPE</span></div>
+                <div class="topline">
+                    <b id="phase"></b><span id="distance">0 m</span>
+                </div>
+            </header>
+            <section id="wind">
+                <span id="windArrow">↓</span>
+                <div><b id="windSpeed"></b><small id="windLabel"></small></div>
+            </section>
+            <aside id="edgeGauge">
+                <label>TAKEOFF</label>
+                <div class="track">
+                    <i id="edgeDot"></i><span class="edgeMark"></span>
+                </div>
+                <small id="edgeText">EDGE</small>
+            </aside>
+            <aside id="heightGauge">
+                <label>CLEARANCE</label><strong id="heightText">—</strong>
+                <div class="heightTrack"><i id="heightFill"></i></div>
+            </aside>
+            <div
+                id="target"
+                role="img"
+                aria-label="Takeoff target: aim for the center dot"
+            >
+                <i></i>
+            </div>
+            <div id="telemetry">
+                <span>V <b id="vRead">0°</b></span
+                ><span>YAW <b id="yawRead">0°</b></span
+                ><span id="balance">STEADY</span>
+            </div>
+            <div id="cue"></div>
+            <div id="takeoffNote"></div>
+            <div id="startZone">
+                <b>HOLD TO START</b>
+            </div>
+            <section id="intro" class="panel" hidden>
+                <div class="eyebrow">ONE FINGER. ONE FLIGHT.</div>
+                <h1>Find your<br />flight line.</h1>
+                <p>
+                    Hold the bottom zone to run. Swipe fast to the center and
+                    pause just before the ramp ends.
+                </p>
+                <div class="steps">
+                    <p><b>01 / TAKEOFF</b>Speed + accuracy + edge timing.</p>
+                    <p>
+                        <b>02 / FLIGHT</b>Up opens skis. Left/right
+                        countersteers wind. Move smoothly.
+                    </p>
+                    <p>
+                        <b>03 / LANDING</b>Lower your finger to close skis.
+                        Correct yaw. Lift, then tap at touchdown.
+                    </p>
+                </div>
+                <button id="begin">Back to hill</button>
+            </section>
+            <section id="results" class="panel" hidden></section>
+            <button id="help" aria-label="Show controls">?</button>
+        </main>
+        <script src="game.js"></script>
+    </body>
+</html>

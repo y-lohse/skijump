@@ -1,0 +1,438 @@
+* {
+    box-sizing: border-box;
+}
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #081721;
+    color: #eff8fb;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    overscroll-behavior: none;
+}
+body {
+    display: flex;
+    justify-content: center;
+}
+#game {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    background: #b3d1db;
+    touch-action: none;
+    user-select: none;
+}
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+header {
+    position: absolute;
+    top: max(22px, env(safe-area-inset-top));
+    left: 24px;
+    right: 24px;
+    pointer-events: none;
+    text-shadow: 0 1px 10px #153b4666;
+}
+.eyebrow {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #bce5e7;
+    font-weight: 700;
+}
+.title {
+    font-size: 24px;
+    letter-spacing: -1px;
+    font-weight: 900;
+    margin-top: 5px;
+}
+.title span {
+    font-size: 8px;
+    letter-spacing: 1px;
+    border: 1px solid #ffffff55;
+    padding: 4px;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+.topline {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 18px;
+    font-size: 12px;
+    letter-spacing: 2px;
+}
+.topline b {
+    color: #befab9;
+}
+#wind {
+    position: absolute;
+    top: 132px;
+    left: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #102d3dc9;
+    border: 1px solid #ffffff20;
+    border-radius: 14px;
+    padding: 10px 14px;
+    pointer-events: none;
+}
+#windArrow {
+    font-size: 30px;
+    color: #c5f8ad;
+    display: inline-block;
+}
+#wind b {
+    font-size: 16px;
+}
+#wind small {
+    display: block;
+    font-size: 10px;
+    color: #b8cfd7;
+    margin-top: 3px;
+}
+aside {
+    position: absolute;
+    top: 34%;
+    pointer-events: none;
+}
+aside label {
+    font-size: 8px;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 12px;
+    color: #274d5c;
+    font-weight: 800;
+}
+#edgeGauge {
+    right: 18px;
+    width: 74px;
+    text-align: right;
+}
+.track {
+    height: 150px;
+    width: 5px;
+    background: #153b4650;
+    border-radius: 8px;
+    margin-left: auto;
+    position: relative;
+}
+.edgeMark {
+    position: absolute;
+    top: 25%;
+    width: 28px;
+    height: 2px;
+    background: #ed703d;
+    left: -11px;
+}
+.edgeMark:after {
+    content: "EDGE";
+    position: absolute;
+    top: -15px;
+    left: -2px;
+    font-size: 8px;
+    color: #763a21;
+    font-weight: bold;
+}
+#edgeDot {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    left: -4px;
+    background: #153b46;
+    border: 2px solid white;
+    border-radius: 50%;
+    top: 95%;
+}
+#edgeText {
+    display: block;
+    margin-top: 12px;
+    font-size: 10px;
+    color: #244857;
+}
+#heightGauge {
+    right: 18px;
+    text-align: right;
+}
+#heightText {
+    font-size: 20px;
+    color: #173c4a;
+}
+.heightTrack {
+    height: 120px;
+    width: 5px;
+    background: #183e4c40;
+    margin: 12px 0 0 auto;
+    position: relative;
+    border-radius: 6px;
+}
+.heightTrack i {
+    position: absolute;
+    bottom: 0;
+    width: 5px;
+    background: #235d70;
+    border-radius: 6px;
+}
+#target {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 112px;
+    height: 112px;
+    border: 3px solid #173d4c;
+    border-radius: 50%;
+    background: #f79a4d38;
+    box-shadow:
+        0 0 0 3px #ffffffdd,
+        0 4px 20px #173d4c30;
+    pointer-events: none;
+    display: grid;
+    place-items: center;
+}
+#target:before {
+    content: "";
+    position: absolute;
+    width: 54px;
+    height: 54px;
+    border: 2px solid #173d4c;
+    border-radius: 50%;
+    background: #ffffff55;
+}
+#target:after {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    background:
+        linear-gradient(#173d4c, #173d4c) center/2px 100% no-repeat,
+        linear-gradient(#173d4c, #173d4c) center/100% 2px no-repeat;
+}
+#target i {
+    z-index: 1;
+    width: 16px;
+    height: 16px;
+    border: 3px solid white;
+    background: #e96d32;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px #173d4c;
+}
+#target[hidden],
+#startZone[hidden] {
+    display: none;
+}
+#cue.fall {
+    color: #ab3e23;
+}
+#telemetry {
+    position: absolute;
+    bottom: 25%;
+    left: 22px;
+    right: 22px;
+    display: flex;
+    justify-content: space-between;
+    background: #123341da;
+    border: 1px solid #ffffff25;
+    border-radius: 10px;
+    padding: 10px 13px;
+    font-size: 10px;
+    pointer-events: none;
+}
+#telemetry b {
+    font-size: 13px;
+    margin-left: 5px;
+}
+#balance {
+    color: #c2f5b1;
+}
+#cue {
+    position: absolute;
+    bottom: 19%;
+    width: 100%;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 800;
+    color: #163c49;
+    pointer-events: none;
+}
+#takeoffNote {
+    position: absolute;
+    top: 198px;
+    width: 100%;
+    text-align: center;
+    color: #173c49;
+    font-size: 11px;
+    pointer-events: none;
+}
+#startZone {
+    position: absolute;
+    bottom: max(22px, env(safe-area-inset-bottom));
+    left: 22px;
+    right: 22px;
+    height: 95px;
+    border: 1px solid #e0f6f988;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #163744e8, #102c39ee);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 9px;
+    pointer-events: none;
+}
+#startZone b {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: #cef9b9;
+}
+#startZone span {
+    font-size: 10px;
+    color: #b8ced8;
+}
+.panel {
+    position: absolute;
+    inset: auto 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    max-height: 90%;
+    overflow: auto;
+    background: #102936f5;
+    backdrop-filter: blur(14px);
+    border: 1px solid #86b9c344;
+    box-shadow: 0 25px 70px #09243066;
+    border-radius: 24px;
+    padding: 28px;
+    z-index: 5;
+    touch-action: pan-y;
+    user-select: text;
+}
+.panel h1 {
+    font-size: 42px;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin: 19px 0;
+}
+.panel p {
+    font-size: 13px;
+    color: #bbd0d9;
+    line-height: 1.6;
+}
+.steps {
+    margin: 23px 0;
+}
+.steps p {
+    font-size: 12px;
+    margin: 12px 0;
+}
+.steps b {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #ddf7e2;
+}
+button {
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+}
+button:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+}
+.panel button {
+    width: 100%;
+    padding: 16px;
+    background: #cbf7b4;
+    border-radius: 12px;
+    color: #173b32;
+    font-size: 13px;
+    font-weight: 800;
+}
+.panel small {
+    display: block;
+    font-size: 10px;
+    line-height: 1.5;
+    color: #91aeba;
+    margin-top: 14px;
+}
+.panel[hidden] {
+    display: none;
+}
+#help {
+    position: absolute;
+    bottom: 134px;
+    right: 22px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #183d4c;
+    color: #d8e8ec;
+    z-index: 2;
+}
+.score {
+    font-size: 60px;
+    letter-spacing: -3px;
+    font-weight: 900;
+    color: #cbf7b4;
+    margin: 8px 0;
+}
+.score small {
+    display: inline;
+    font-size: 15px;
+    letter-spacing: 0;
+}
+.scoreRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #ffffff16;
+    padding: 11px 0;
+    font-size: 13px;
+}
+.scoreRow span {
+    color: #b8cfd7;
+}
+.detail {
+    font-size: 11px !important;
+    margin: 7px 0 14px !important;
+}
+.panel h2 {
+    font-size: 28px;
+    margin: 10px 0;
+}
+#results button {
+    margin-top: 20px;
+}
+@media (max-height: 700px) {
+    .panel {
+        padding: 22px;
+    }
+    .panel h1 {
+        font-size: 32px;
+        margin: 12px 0;
+    }
+    .steps {
+        margin: 12px 0;
+    }
+    #wind {
+        top: 115px;
+    }
+    #takeoffNote {
+        top: 175px;
+    }
+    #telemetry {
+        bottom: 26%;
+    }
+    #startZone {
+        height: 78px;
+    }
+    #cue {
+        bottom: 20%;
+        font-size: 14px;
+    }
+}
