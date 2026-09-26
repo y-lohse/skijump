@@ -25,7 +25,10 @@ body {
     overflow: hidden;
     background: #b3d1db;
     touch-action: none;
+    /* iOS long-press selection can otherwise cover the held-finger controls. */
+    -webkit-user-select: none;
     user-select: none;
+    -webkit-touch-callout: none;
 }
 canvas {
     display: block;
